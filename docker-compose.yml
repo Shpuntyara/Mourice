@@ -1,0 +1,15 @@
+services:
+  mourice:
+    build: .
+    image: mourice:dev
+    env_file:
+      - .env
+    # Knowledge base is mounted read-mostly; data stays on the host.
+    volumes:
+      - "${MOURICE_OBSIDIAN_VAULT:-./data/vault}:/data/vault:ro"
+      - "${MOURICE_CHROMA_DIR:-./data/chroma}:/data/chroma"
+    # Reach Ollama running on the host machine.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true

@@ -1,0 +1,33 @@
+# Secrets / config
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Data (local knowledge stores — never commit personal data)
+data/
+*.sqlite3
+chroma/
+ChromaDB/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

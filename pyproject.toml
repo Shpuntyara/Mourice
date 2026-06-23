@@ -1,0 +1,53 @@
+[project]
+name = "mourice"
+version = "0.0.1"
+description = "Mourice — a personal AI assistant orchestrator (self-hosted, multi-LLM, knowledge-grounded)."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Shpuntyara" }]
+keywords = ["ai", "assistant", "orchestrator", "llm", "rag", "ollama", "chromadb"]
+
+dependencies = [
+    "pydantic-settings>=2.5",
+    "rich>=13.9",
+    "loguru>=0.7",
+    "httpx>=0.27",
+    "chromadb>=0.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+]
+
+[project.scripts]
+mourice = "mourice.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mourice"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --cov=mourice --cov-report=term-missing"
+testpaths = ["tests"]
