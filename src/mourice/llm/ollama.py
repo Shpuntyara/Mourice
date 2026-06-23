@@ -69,6 +69,30 @@ class OllamaProvider:
         """Return the full reply as a single string."""
         return "".join(self.chat(messages, model=model))
 
+    def chat_raw(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+        model: str | None = None,
+    ) -> dict[str, Any]:
+        """Non-streaming chat that returns the raw assistant message.
+
+        Used by the agent loop for tool calling: the returned dict may contain
+        ``content`` and/or ``tool_calls``.
+        """
+        payload: dict[str, Any] = {
+            "model": model or self._default_model,
+            "messages": messages,
+            "stream": False,
+        }
+        if tools:
+            payload["tools"] = tools
+        response = self._client.post("/api/chat", json=payload)
+        response.raise_for_status()
+        message = response.json().get("message", {})
+        return message if isinstance(message, dict) else {}
+
     def close(self) -> None:
         """Close the underlying HTTP client."""
         self._client.close()
