@@ -7,5 +7,6 @@ extra installed (keeps core + CI light).
 
 from .audio import play, play_wav, record_until_enter
 from .stt import Transcriber
+from .tts import Speaker
 
-__all__ = ["Transcriber", "play", "play_wav", "record_until_enter"]
+__all__ = ["Speaker", "Transcriber", "play", "play_wav", "record_until_enter"]
