@@ -16,10 +16,17 @@ from mourice.config import Settings
 from mourice.log import logger
 
 from .chunking import chunk_note
+from .embedders import ollama_embedder
 from .store import ChromaStore
 from .vault import Note, VaultReader
 
-__all__ = ["SyncResult", "sync_to_store", "sync_vault"]
+__all__ = ["SyncResult", "build_store", "sync_to_store", "sync_vault"]
+
+
+def build_store(settings: Settings) -> ChromaStore:
+    """Construct a ChromaStore wired with the configured multilingual embedder."""
+    embedder = ollama_embedder(settings.ollama_host, settings.embedding_model)
+    return ChromaStore(settings.chroma_dir, settings.chroma_collection, embedder=embedder)
 
 
 @dataclass(frozen=True)
@@ -109,6 +116,6 @@ def sync_vault(settings: Settings, *, reset: bool = False) -> SyncResult:
             "MOURICE_OBSIDIAN_VAULT and MOURICE_CHROMA_DIR must be set (see .env.example)"
         )
     reader = VaultReader(settings.obsidian_vault)
-    store = ChromaStore(settings.chroma_dir, settings.chroma_collection)
+    store = build_store(settings)
     manifest_path = Path(settings.chroma_dir) / "sync_manifest.json"
     return sync_to_store(reader, store, manifest_path, reset=reset)

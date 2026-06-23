@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # LLM (Ollama)
     ollama_host: str = "http://localhost:11434"
     default_model: str = "qwen2.5:14b"
+    # Multilingual embedding model served by Ollama (strong on RU/PL).
+    embedding_model: str = "bge-m3"
 
     # Knowledge base
     obsidian_vault: str = ""
