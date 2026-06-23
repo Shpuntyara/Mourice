@@ -10,13 +10,14 @@ Mourice is **not** just an LLM wrapper. It's a hand-written **orchestrator** tha
 
 Inspired by J.A.R.V.I.S. — a long-term project that also serves as a learning ground and portfolio for a DevOps/MLOps career.
 
-## ✨ Features (Phase 1 — Terminal MVP)
+## ✨ Features
 
 - 🧠 **Orchestrator core** — a custom agent loop with function-calling tools.
 - 📚 **Knowledge-grounded (RAG)** — semantic search over an Obsidian vault via ChromaDB.
 - 🌍 **Multilingual** — local `bge-m3` embeddings; strong on Russian, Polish, English.
 - 🔌 **Tools** — `search_memory`, `read_note`, `write_note` (with action-safety).
 - 🗣️ **Personality** — friendly companion, honest ("I don't know" + reason), language-switchable.
+- 🎙️ **Voice (Phase 2)** — talk to Mourice: local STT (faster-whisper) + TTS (Piper).
 - 🏠 **Local-first & private** — runs entirely on local hardware via Ollama; no cloud.
 
 ## 🚀 Getting started
@@ -54,13 +55,23 @@ uv run mourice          # status banner
 
 Ask things like *"what did I write about my first prototype?"* — Mourice will search your notes and answer from them.
 
+### Voice (optional)
+```bash
+uv sync --extra voice                       # audio + STT + TTS deps
+# download a Piper voice (example: Russian), then point .env to its .onnx:
+python -m piper.download_voices ru_RU-dmitri-medium --download-dir ./voices
+# set MOURICE_PIPER_VOICE=./voices/ru_RU-dmitri-medium.onnx
+uv run mourice voice                         # push-to-talk: Enter to talk, q to quit
+```
+STT (faster-whisper) runs on CPU by default; the Whisper model downloads on first use.
+
 ## 🗺️ Roadmap
 
 | Phase | Goal | Status |
 |-------|------|--------|
 | 0 | Foundation: repo, Docker, CI | ✅ done |
 | 1 | Terminal MVP — chat grounded in the knowledge base (RAG) | ✅ done |
-| 2 | Voice (STT + TTS) | ⬜ |
+| 2 | Voice (STT + TTS) | ✅ done |
 | 3 | Telegram bot | ⬜ |
 | 4 | Desktop UI with settings | ⬜ |
 | 5 | Skills: reminders, calendar, smart home, job search | ⬜ |

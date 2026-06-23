@@ -49,3 +49,13 @@ def test_main_chat(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys, "argv", ["mourice", "chat"])
     cli.main()
     assert called.get("chat")
+
+
+def test_main_voice(monkeypatch: pytest.MonkeyPatch) -> None:
+    import mourice.interfaces as interfaces
+
+    called: dict[str, Any] = {}
+    monkeypatch.setattr(interfaces, "run_voice", lambda settings: called.setdefault("voice", True))
+    monkeypatch.setattr(sys, "argv", ["mourice", "voice"])
+    cli.main()
+    assert called.get("voice")
