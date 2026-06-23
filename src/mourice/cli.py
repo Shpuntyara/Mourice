@@ -3,6 +3,7 @@
 Commands:
 - ``mourice``        — show status banner.
 - ``mourice sync``   — sync the Obsidian vault into ChromaDB (``--reset`` for full rebuild).
+- ``mourice chat``   — interactive terminal chat with Mourice.
 """
 
 from __future__ import annotations
@@ -50,6 +51,7 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command")
     sync_parser = sub.add_parser("sync", help="Sync the Obsidian vault into ChromaDB")
     sync_parser.add_argument("--reset", action="store_true", help="Full rebuild")
+    sub.add_parser("chat", help="Interactive terminal chat with Mourice")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -58,6 +60,10 @@ def main() -> None:
 
     if args.command == "sync":
         _run_sync(settings, reset=args.reset)
+    elif args.command == "chat":
+        from mourice.interfaces import run_chat
+
+        run_chat(settings)
     else:
         _banner(settings)
 
