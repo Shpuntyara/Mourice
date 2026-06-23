@@ -6,80 +6,99 @@
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Mourice is **not** just an LLM wrapper. It's a hand-written **orchestrator** that selects and switches between multiple LLMs depending on the task, has direct access to a personal knowledge base (Obsidian + ChromaDB), and grows through pluggable skill modules.
+Mourice is **not** just an LLM wrapper. It's a hand-written **orchestrator** that selects and switches between multiple local LLMs depending on the task, has direct access to a personal knowledge base (Obsidian + ChromaDB), and grows through pluggable skill modules.
 
 Inspired by J.A.R.V.I.S. — a long-term project that also serves as a learning ground and portfolio for a DevOps/MLOps career.
 
-## ✨ Vision
+## ✨ Features (Phase 1 — Terminal MVP)
 
-- 🧠 **Orchestrator core** — routes tasks to the right model/tool, not a single hard-wired LLM.
-- 📚 **Knowledge-grounded** — direct access to an Obsidian vault and a ChromaDB vector store (RAG).
-- 🔌 **Modular skills** — abilities added as modules, the core stays thin.
-- 🏠 **Local-first & private** — runs locally (Ollama, ChromaDB); cloud models are optional.
-- 🗣️ **Multi-interface** — terminal → voice → Telegram → desktop UI.
+- 🧠 **Orchestrator core** — a custom agent loop with function-calling tools.
+- 📚 **Knowledge-grounded (RAG)** — semantic search over an Obsidian vault via ChromaDB.
+- 🌍 **Multilingual** — local `bge-m3` embeddings; strong on Russian, Polish, English.
+- 🔌 **Tools** — `search_memory`, `read_note`, `write_note` (with action-safety).
+- 🗣️ **Personality** — friendly companion, honest ("I don't know" + reason), language-switchable.
+- 🏠 **Local-first & private** — runs entirely on local hardware via Ollama; no cloud.
+
+## 🚀 Getting started
+
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/)
+- [Ollama](https://ollama.com/) running locally with:
+  ```bash
+  ollama pull qwen2.5:14b   # chat model
+  ollama pull bge-m3        # multilingual embeddings
+  ```
+
+### Install & configure
+```bash
+uv sync --extra dev
+cp .env.example .env        # then edit paths/models
+```
+
+`.env` (key settings):
+```
+MOURICE_OLLAMA_HOST=http://localhost:11434
+MOURICE_DEFAULT_MODEL=qwen2.5:14b
+MOURICE_EMBEDDING_MODEL=bge-m3
+MOURICE_OBSIDIAN_VAULT=/path/to/your/Obsidian Vault
+MOURICE_CHROMA_DIR=/path/to/ChromaDB
+```
+
+### Use it
+```bash
+uv run mourice sync     # index your vault into ChromaDB (--reset to rebuild)
+uv run mourice chat     # talk to Mourice (commands: /lang ru|pl|en, /reset, /quit)
+uv run mourice eval     # retrieval relevance hit-rate
+uv run mourice          # status banner
+```
+
+Ask things like *"what did I write about my first prototype?"* — Mourice will search your notes and answer from them.
 
 ## 🗺️ Roadmap
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| 0 | Foundation: repo, Docker, CI, structure | 🚧 in progress |
-| 1 | Terminal MVP — chat with knowledge base (RAG) | 🔜 |
+| 0 | Foundation: repo, Docker, CI | ✅ done |
+| 1 | Terminal MVP — chat grounded in the knowledge base (RAG) | ✅ done |
 | 2 | Voice (STT + TTS) | ⬜ |
 | 3 | Telegram bot | ⬜ |
 | 4 | Desktop UI with settings | ⬜ |
 | 5 | Skills: reminders, calendar, smart home, job search | ⬜ |
 | 6 | Physical body (robot) | ⬜ (long-term) |
 
-## 🏗️ Architecture (high level)
+## 🏗️ Architecture
 
 ```
 Interfaces (CLI / voice / Telegram / UI)
         │
-   Orchestrator  ──►  LLM Router  ──►  Ollama / cloud
-        │
-        ├─►  Memory   (Obsidian + ChromaDB, RAG)
-        └─►  Modules  (pluggable skills)
+   Orchestrator (agent loop)
+        ├─ LLM Router → Ollama (qwen2.5, qwen2.5-coder, …)
+        ├─ Memory     → Obsidian + ChromaDB (RAG, bge-m3)
+        └─ Modules    → search_memory / read_note / write_note
 ```
+
+| Package | Responsibility |
+|---------|----------------|
+| `mourice.core` | Orchestrator, system prompt, context builder |
+| `mourice.llm` | LLM provider (Ollama) + model router |
+| `mourice.memory` | Vault reader, chunking, embeddings, ChromaDB, sync, search |
+| `mourice.modules` | Tools (skills) + registry |
+| `mourice.interfaces` | Terminal REPL (more to come) |
 
 ## 🛠️ Tech stack
 
 Python 3.13 · uv · Ollama · ChromaDB · Obsidian · Docker · GitHub Actions · pytest · ruff · mypy · pre-commit
 
-## 🚀 Getting started
-
-> ⚠️ Early development — Phase 0. Not functional yet.
-
-```bash
-# Install uv: https://docs.astral.sh/uv/
-uv sync --extra dev
-cp .env.example .env   # then edit values
-
-# Run (placeholder for now)
-uv run mourice
-```
-
 ## 🧪 Development
 
 ```bash
 uv run ruff check .
-uv run ruff format .
+uv run ruff format --check .
 uv run mypy
 uv run pytest
 ```
 
-## 📁 Repository layout
-
-```
-src/mourice/      # application code
-  core/           # orchestrator
-  llm/            # LLM providers & router
-  memory/         # Obsidian + ChromaDB
-  modules/        # pluggable skills
-  interfaces/     # CLI, voice, telegram, ui adapters
-tests/            # tests
-docs/             # architecture & design docs
-scripts/          # utilities (e.g. obsidian → chroma sync)
-```
+Workflow: branch per issue → PR → green CI → squash merge.
 
 ## 📄 License
 
