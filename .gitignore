@@ -23,6 +23,9 @@ htmlcov/
 # Logs
 logs/
 
+# Audio scratch
+*.wav
+
 # Data (local knowledge stores — never commit personal data)
 data/
 *.sqlite3

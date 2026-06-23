@@ -26,6 +26,12 @@ dev = [
     "pre-commit>=4.0",
     "types-pyyaml>=6.0",
 ]
+voice = [
+    "sounddevice>=0.5",
+    "numpy>=2.0",
+    "faster-whisper>=1.1",
+    "piper-tts>=1.4",
+]
 
 [project.scripts]
 mourice = "mourice.cli:main"
@@ -51,7 +57,7 @@ strict = true
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["chromadb.*"]
+module = ["chromadb.*", "sounddevice.*", "faster_whisper.*", "piper.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
