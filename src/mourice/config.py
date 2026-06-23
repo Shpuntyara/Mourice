@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # LLM (Ollama)
     ollama_host: str = "http://localhost:11434"
-    default_model: str = "llama3.1:8b"
+    default_model: str = "qwen2.5:14b"
 
     # Knowledge base
     obsidian_vault: str = ""
