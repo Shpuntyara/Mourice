@@ -10,14 +10,10 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
-# Install dependencies first (better layer caching)
-COPY pyproject.toml ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system --no-cache .
-
-# Copy source and install the package
+# Copy everything the build backend needs (pyproject references README.md and
+# the src/ package), then install the project + dependencies in one step.
+COPY pyproject.toml README.md ./
 COPY src ./src
-COPY README.md ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system --no-cache .
 
