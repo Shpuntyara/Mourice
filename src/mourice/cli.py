@@ -5,6 +5,7 @@ Commands:
 - ``mourice sync``   — sync the Obsidian vault into ChromaDB (``--reset`` for full rebuild).
 - ``mourice chat``   — interactive terminal chat with Mourice.
 - ``mourice eval``   — run retrieval evals (search relevance hit-rate).
+- ``mourice voice``  — talk to Mourice by voice (push-to-talk).
 """
 
 from __future__ import annotations
@@ -65,6 +66,7 @@ def main() -> None:
     sync_parser.add_argument("--reset", action="store_true", help="Full rebuild")
     sub.add_parser("chat", help="Interactive terminal chat with Mourice")
     sub.add_parser("eval", help="Run retrieval evals (search relevance)")
+    sub.add_parser("voice", help="Talk to Mourice by voice (push-to-talk)")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -79,6 +81,10 @@ def main() -> None:
         run_chat(settings)
     elif args.command == "eval":
         _run_eval(settings)
+    elif args.command == "voice":
+        from mourice.interfaces import run_voice
+
+        run_voice(settings)
     else:
         _banner(settings)
 
