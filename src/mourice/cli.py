@@ -11,6 +11,7 @@ from rich.panel import Panel
 
 from mourice import __version__
 from mourice.config import get_settings
+from mourice.log import logger, setup_logging
 
 console = Console()
 
@@ -18,6 +19,12 @@ console = Console()
 def main() -> None:
     """Entry point registered as the ``mourice`` console script."""
     settings = get_settings()
+    setup_logging(settings)
+    logger.bind(
+        version=__version__,
+        model=settings.default_model,
+        ollama_host=settings.ollama_host,
+    ).info("Mourice booting")
     console.print(
         Panel.fit(
             f"[bold cyan]Mourice[/] v{__version__}\n"

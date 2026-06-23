@@ -20,6 +20,9 @@ venv/
 .coverage
 htmlcov/
 
+# Logs
+logs/
+
 # Data (local knowledge stores — never commit personal data)
 data/
 *.sqlite3
