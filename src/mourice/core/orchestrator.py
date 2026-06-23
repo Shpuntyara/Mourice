@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any, Protocol
 
-from mourice.llm import Message
+from mourice.llm import Message, ModelRouter
 from mourice.log import logger
 from mourice.modules import ToolRegistry
 
@@ -58,12 +58,14 @@ class Orchestrator:
         context_builder: ContextBuilder | None = None,
         *,
         model: str | None = None,
+        router: ModelRouter | None = None,
         max_iterations: int = 5,
     ) -> None:
         self._backend = backend
         self._registry = registry
         self._context = context_builder or ContextBuilder()
         self._model = model
+        self._router = router
         self._max_iterations = max_iterations
         self._history: list[Message] = []
 
@@ -71,9 +73,10 @@ class Orchestrator:
         """Process one user message and return Mourice's final reply."""
         messages = [_to_dict(m) for m in self._context.build(self._history, user_input)]
         tools = self._registry.schemas() or None
+        model = self._router.select(user_input) if self._router else self._model
 
         for _ in range(self._max_iterations):
-            reply = self._backend.chat_raw(messages, tools=tools, model=self._model)
+            reply = self._backend.chat_raw(messages, tools=tools, model=model)
             tool_calls = reply.get("tool_calls")
 
             if not tool_calls:

@@ -2,5 +2,6 @@
 
 from .base import LLMProvider, Message
 from .ollama import OllamaProvider
+from .router import ModelRoute, ModelRouter
 
-__all__ = ["LLMProvider", "Message", "OllamaProvider"]
+__all__ = ["LLMProvider", "Message", "ModelRoute", "ModelRouter", "OllamaProvider"]
