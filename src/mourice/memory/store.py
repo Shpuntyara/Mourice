@@ -8,6 +8,7 @@ depend on Chroma's embedding-function plumbing and stays easy to test.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,19 @@ from mourice.log import logger
 
 from .chunking import Chunk
 
-__all__ = ["ChromaStore", "Embedder"]
+__all__ = ["ChromaStore", "Embedder", "SearchResult"]
+
+
+@dataclass(frozen=True)
+class SearchResult:
+    """One semantic-search hit."""
+
+    text: str
+    note_path: str
+    note_title: str
+    breadcrumb: str
+    distance: float
+
 
 # Maps a list of texts to a list of embedding vectors.
 Embedder = Callable[[list[str]], list[list[float]]]
@@ -88,6 +101,35 @@ class ChromaStore:
         )
         logger.bind(count=len(items)).info("Chunks upserted to ChromaDB")
         return len(items)
+
+    def search(self, query: str, *, n_results: int = 5) -> list[SearchResult]:
+        """Return the most semantically similar chunks to ``query``."""
+        if self._collection.count() == 0:
+            return []
+        embedding = self._get_embedder()([query])[0]
+        res = self._collection.query(
+            query_embeddings=[embedding],  # type: ignore[arg-type]
+            n_results=n_results,
+            include=["documents", "metadatas", "distances"],
+        )
+        documents = (res.get("documents") or [[]])[0]
+        metadatas = (res.get("metadatas") or [[]])[0]
+        distances = (res.get("distances") or [[]])[0]
+
+        results: list[SearchResult] = []
+        for doc, meta, dist in zip(documents, metadatas, distances, strict=False):
+            meta = meta or {}
+            results.append(
+                SearchResult(
+                    text=doc or "",
+                    note_path=str(meta.get("note_path", "")),
+                    note_title=str(meta.get("note_title", "")),
+                    breadcrumb=str(meta.get("breadcrumb", "")),
+                    distance=float(dist),
+                )
+            )
+        logger.bind(query=query, hits=len(results)).debug("Memory search")
+        return results
 
     def count(self) -> int:
         """Number of stored chunks."""
