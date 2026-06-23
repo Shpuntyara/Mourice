@@ -93,6 +93,10 @@ class ChromaStore:
         """Number of stored chunks."""
         return self._collection.count()
 
+    def delete_by_note(self, note_path: str) -> None:
+        """Delete all chunks belonging to a given note (by metadata)."""
+        self._collection.delete(where={"note_path": note_path})
+
     def reset(self) -> None:
         """Delete and recreate the collection (used by full re-sync)."""
         name = self._collection.name
