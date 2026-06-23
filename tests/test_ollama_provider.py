@@ -61,3 +61,30 @@ def test_model_override() -> None:
 def test_provider_satisfies_protocol() -> None:
     provider = _make_provider(httpx.MockTransport(lambda r: httpx.Response(200, content=b"")))
     assert isinstance(provider, LLMProvider)
+
+
+def test_chat_raw_returns_message_with_tool_calls() -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{"function": {"name": "search_memory", "arguments": {}}}],
+                }
+            },
+        )
+
+    provider = _make_provider(httpx.MockTransport(handler))
+    tools = [{"type": "function", "function": {"name": "search_memory"}}]
+    message = provider.chat_raw([{"role": "user", "content": "hi"}], tools=tools, model="m")
+
+    assert message["tool_calls"][0]["function"]["name"] == "search_memory"
+    body = captured["body"]
+    assert isinstance(body, dict)
+    assert body["stream"] is False
+    assert body["tools"] == tools
