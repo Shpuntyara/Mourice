@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     chroma_dir: str = ""
     chroma_collection: str = "mourice_memory"
 
+    # Voice (Phase 2)
+    whisper_model: str = "small"  # faster-whisper model size
+    voice_language: str = "ru"
+    piper_voice: str = ""  # path to a Piper .onnx voice model
+
     # Runtime
     log_level: str = Field(default="INFO")
 
