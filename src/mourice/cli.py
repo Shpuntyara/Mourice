@@ -4,6 +4,7 @@ Commands:
 - ``mourice``        — show status banner.
 - ``mourice sync``   — sync the Obsidian vault into ChromaDB (``--reset`` for full rebuild).
 - ``mourice chat``   — interactive terminal chat with Mourice.
+- ``mourice eval``   — run retrieval evals (search relevance hit-rate).
 """
 
 from __future__ import annotations
@@ -45,6 +46,17 @@ def _run_sync(settings: Settings, *, reset: bool) -> None:
     )
 
 
+def _run_eval(settings: Settings) -> None:
+    from mourice.evals import evaluate
+    from mourice.memory import build_store
+
+    report = evaluate(build_store(settings))
+    for r in report.results:
+        mark = "[green]HIT [/]" if r.hit else "[red]MISS[/]"
+        console.print(f"{mark} ({r.case.lang}) {r.case.query}  →  {r.top}")
+    console.print(f"\n[bold]Hit-rate:[/] {report.hits}/{report.total} ({report.hit_rate:.0%})")
+
+
 def main() -> None:
     """Entry point registered as the ``mourice`` console script."""
     parser = argparse.ArgumentParser(prog="mourice", description="Mourice assistant")
@@ -52,6 +64,7 @@ def main() -> None:
     sync_parser = sub.add_parser("sync", help="Sync the Obsidian vault into ChromaDB")
     sync_parser.add_argument("--reset", action="store_true", help="Full rebuild")
     sub.add_parser("chat", help="Interactive terminal chat with Mourice")
+    sub.add_parser("eval", help="Run retrieval evals (search relevance)")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -64,6 +77,8 @@ def main() -> None:
         from mourice.interfaces import run_chat
 
         run_chat(settings)
+    elif args.command == "eval":
+        _run_eval(settings)
     else:
         _banner(settings)
 
