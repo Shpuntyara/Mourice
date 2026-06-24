@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     xtts_top_k: int = 25
     xtts_top_p: float = 0.78
     xtts_pitch: float = 0.86         # <1.0 = lower pitch, applied via ffmpeg post-process
+    xtts_daemon_port: int = 5199     # local TCP port for the persistent XTTS daemon
 
     # Telegram (Phase 3)
     telegram_token: str = ""  # BotFather token; empty disables the bot
