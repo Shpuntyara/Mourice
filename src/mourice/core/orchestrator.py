@@ -9,6 +9,7 @@ answer. See the "Оркестратор" design note.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, Protocol
 
 from mourice.llm import Message, ModelRouter
@@ -60,6 +61,7 @@ class Orchestrator:
         model: str | None = None,
         router: ModelRouter | None = None,
         max_iterations: int = 5,
+        history_path: str | Path | None = None,
     ) -> None:
         self._backend = backend
         self._registry = registry
@@ -67,7 +69,27 @@ class Orchestrator:
         self._model = model
         self._router = router
         self._max_iterations = max_iterations
-        self._history: list[Message] = []
+        self._history_path = Path(history_path) if history_path else None
+        self._history: list[Message] = self._load_history()
+
+    def _load_history(self) -> list[Message]:
+        if not self._history_path or not self._history_path.exists():
+            return []
+        try:
+            data = json.loads(self._history_path.read_text(encoding="utf-8"))
+            return [Message(m["role"], m["content"]) for m in data]
+        except (json.JSONDecodeError, OSError, KeyError, TypeError):
+            logger.warning("Conversation history unreadable; starting fresh")
+            return []
+
+    def _save_history(self) -> None:
+        if not self._history_path:
+            return
+        self._history_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = [{"role": m.role, "content": m.content} for m in self._history]
+        self._history_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     def run(self, user_input: str) -> str:
         """Process one user message and return Mourice's final reply."""
@@ -83,6 +105,7 @@ class Orchestrator:
                 content = str(reply.get("content", "")).strip()
                 self._history.append(Message("user", user_input))
                 self._history.append(Message("assistant", content))
+                self._save_history()
                 return content
 
             messages.append(reply)
@@ -104,3 +127,4 @@ class Orchestrator:
     def reset(self) -> None:
         """Clear conversation history."""
         self._history.clear()
+        self._save_history()

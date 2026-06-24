@@ -60,4 +60,10 @@ def build_orchestrator(
 
     context = ContextBuilder(language=language)
     router = ModelRouter(settings.default_model)
-    return Orchestrator(provider, ToolRegistry(tools), context, router=router)
+    return Orchestrator(
+        provider,
+        ToolRegistry(tools),
+        context,
+        router=router,
+        history_path=settings.history_file or None,
+    )
