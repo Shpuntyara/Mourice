@@ -91,9 +91,13 @@ class OllamaProvider:
             payload["tools"] = tools
             if tool_choice:
                 payload["tool_choice"] = tool_choice
+        log = logger.bind(model=payload["model"])
+        log.debug("Ollama chat_raw sending", tool_choice=tool_choice, n_tools=len(tools) if tools else 0)
         response = self._client.post("/api/chat", json=payload)
         response.raise_for_status()
         message = response.json().get("message", {})
+        has_tools = bool(message.get("tool_calls"))
+        log.debug("Ollama chat_raw response", has_tool_calls=has_tools, content_len=len(str(message.get("content", ""))))
         return message if isinstance(message, dict) else {}
 
     def close(self) -> None:

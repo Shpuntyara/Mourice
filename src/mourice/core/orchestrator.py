@@ -116,6 +116,7 @@ class Orchestrator:
         model = self._router.select(user_input) if self._router else self._model
 
         force_tool = tools and _is_action_request(user_input)
+        logger.debug("Orchestrator run", input_len=len(user_input), force_tool=bool(force_tool), n_tools=len(tools) if tools else 0)
         for iteration in range(self._max_iterations):
             tc = "required" if (iteration == 0 and force_tool) else None
             reply = self._backend.chat_raw(messages, tools=tools, model=model, tool_choice=tc)
@@ -135,6 +136,7 @@ class Orchestrator:
                 arguments = _parse_arguments(function.get("arguments"))
                 logger.bind(tool=name).info("Orchestrator calling tool")
                 result = self._registry.execute(name, arguments)
+                logger.bind(tool=name, result=result[:120]).debug("Tool result")
                 messages.append({"role": "tool", "content": result, "tool_name": name})
 
         logger.warning("Max iterations reached without a final answer")
