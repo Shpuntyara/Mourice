@@ -111,7 +111,6 @@ def run_telegram(
         await message.answer(_DENIED)
 
     async def _reply(message: Message, text: str) -> None:
-        await message.answer(text)
         speaker_ = _get_speaker()
         if speaker_ is not None and text.strip():
             try:
@@ -119,8 +118,10 @@ def run_telegram(
                     wav = Path(tmp) / "reply.wav"
                     await asyncio.to_thread(speaker_.save, text, wav)  # type: ignore[attr-defined]
                     await message.answer_audio(FSInputFile(wav))
+                return  # voice sent — skip text to avoid contradiction
             except Exception:  # noqa: BLE001 — voice reply is best-effort
                 logger.exception("Telegram voice reply failed")
+        await message.answer(text)
 
     async def on_start(message: Message) -> None:
         if not _authorized(message):
