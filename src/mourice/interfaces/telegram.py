@@ -14,6 +14,7 @@ pure helpers below stay import-light for tests.
 from __future__ import annotations
 
 import re
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -156,6 +157,16 @@ def run_telegram(
         )
         await message.answer(_DENIED)
 
+    def _wav_to_ogg(wav: Path) -> Path:
+        ogg = wav.with_suffix(".ogg")
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-i", str(wav), "-c:a", "libopus", "-b:a", "48k", str(ogg)],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"ffmpeg ogg conversion failed: {result.stderr.decode()}")
+        return ogg
+
     async def _reply(message: Message, text: str) -> None:
         speaker_ = _get_speaker()
         if speaker_ is not None and text.strip():
@@ -168,7 +179,8 @@ def run_telegram(
                     with tempfile.TemporaryDirectory() as tmp:
                         wav = Path(tmp) / "reply.wav"
                         await asyncio.to_thread(speaker_.save, sentence, wav)  # type: ignore[attr-defined]
-                        await message.answer_audio(FSInputFile(wav))
+                        ogg = await asyncio.to_thread(_wav_to_ogg, wav)
+                        await message.answer_voice(FSInputFile(ogg))
                         sent_any = True
                 except Exception:  # noqa: BLE001 — voice reply is best-effort
                     logger.exception("Telegram voice reply failed for sentence")
