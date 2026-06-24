@@ -26,6 +26,10 @@ logs/
 # Audio scratch
 *.wav
 
+# Voice samples / clones (copyrighted; never commit) and isolated XTTS env
+voices/
+.venv-xtts/
+
 # Data (local knowledge stores — never commit personal data)
 data/
 *.sqlite3

@@ -6,7 +6,18 @@ extra installed (keeps core + CI light).
 """
 
 from .audio import play, play_wav, record_until_enter
+from .factory import VoiceSpeaker, build_speaker
 from .stt import Transcriber
 from .tts import Speaker
+from .xtts import XttsSpeaker
 
-__all__ = ["Speaker", "Transcriber", "play", "play_wav", "record_until_enter"]
+__all__ = [
+    "Speaker",
+    "Transcriber",
+    "VoiceSpeaker",
+    "XttsSpeaker",
+    "build_speaker",
+    "play",
+    "play_wav",
+    "record_until_enter",
+]
