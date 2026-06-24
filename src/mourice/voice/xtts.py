@@ -1,12 +1,17 @@
-"""XTTS voice-clone speaker (subprocess to the isolated env).
+"""XTTS voice-clone speakers (subprocess and daemon variants).
 
 Mourice's core env stays clean; the heavy coqui/torch stack lives in a separate
-venv. This backend shells out to ``scripts/xtts_speak.py`` to synthesize a WAV
-with the cloned voice, then plays it. Same surface as ``Speaker``.
+venv. Two backends:
+
+- ``XttsSpeaker``       — spawns a subprocess per utterance (simple, slow startup).
+- ``XttsDaemonSpeaker`` — connects to a persistent daemon that keeps the model
+                          loaded, eliminating the ~25 s model-load overhead.
 """
 
 from __future__ import annotations
 
+import json
+import socket
 import subprocess
 import tempfile
 from collections.abc import Callable, Sequence
@@ -16,7 +21,7 @@ from mourice.log import logger
 
 from . import audio
 
-__all__ = ["XttsSpeaker"]
+__all__ = ["XttsDaemonSpeaker", "XttsSpeaker"]
 
 Runner = Callable[[Sequence[str]], None]
 
@@ -91,3 +96,52 @@ class XttsSpeaker:
             out = Path(tmp) / "reply.wav"
             self.save(text, out)
             audio.play_wav(out)
+
+
+class XttsDaemonSpeaker:
+    """Speaks text via a persistent XTTS daemon (no per-request model loading).
+
+    The daemon process (``scripts/xtts_daemon.py``) loads the XTTS model once
+    and serves synthesis requests over a local TCP socket. First audio after bot
+    startup takes ~25 s (model load); every subsequent request takes ~2–3 s.
+    """
+
+    def __init__(
+        self,
+        proc: subprocess.Popen,  # type: ignore[type-arg]
+        host: str = "127.0.0.1",
+        port: int = 5199,
+    ) -> None:
+        self._proc = proc
+        self._host = host
+        self._port = port
+
+    def save(self, text: str, path: str | Path) -> None:
+        req = (json.dumps({"text": text, "out": str(path)}) + "\n").encode()
+        with socket.create_connection((self._host, self._port), timeout=120) as sock:
+            sock.sendall(req)
+            data = b""
+            while not data.endswith(b"\n"):
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
+        resp = json.loads(data.decode())
+        if not resp.get("ok"):
+            raise RuntimeError(f"XTTS daemon: {resp.get('error')}")
+        logger.debug("XTTS daemon synth done")
+
+    def say(self, text: str) -> None:
+        if not text.strip():
+            return
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "reply.wav"
+            self.save(text, out)
+            audio.play_wav(out)
+
+    def __del__(self) -> None:
+        try:
+            if self._proc.poll() is None:
+                self._proc.terminate()
+        except Exception:
+            pass

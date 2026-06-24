@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from mourice.config import Settings
-from mourice.voice import Speaker, XttsSpeaker, build_speaker
+from mourice.voice import Speaker, XttsDaemonSpeaker, XttsSpeaker, build_speaker
 from mourice.voice import audio as audio_module
 
 
@@ -58,14 +58,25 @@ def test_factory_piper() -> None:
     assert isinstance(build_speaker(settings), Speaker)
 
 
-def test_factory_xtts() -> None:
+def test_factory_xtts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """build_speaker with xtts engine should start the daemon and return XttsDaemonSpeaker."""
+    import subprocess
+
+    fake_proc = type("P", (), {
+        "poll": lambda self: None,
+        "stdout": __import__("io").StringIO("[xtts_daemon] Ready on port 5199\n"),
+        "stderr": __import__("io").StringIO(""),
+        "terminate": lambda self: None,
+    })()
+    monkeypatch.setattr(subprocess, "Popen", lambda *a, **kw: fake_proc)
+
     settings = Settings(  # type: ignore[call-arg]
         _env_file=None,
         tts_engine="xtts",
         xtts_python="py.exe",
         speaker_reference="ref.wav",
     )
-    assert isinstance(build_speaker(settings), XttsSpeaker)
+    assert isinstance(build_speaker(settings), XttsDaemonSpeaker)
 
 
 def test_factory_piper_missing_voice() -> None:

@@ -9,12 +9,13 @@ from .audio import play, play_wav, record_until_enter
 from .factory import VoiceSpeaker, build_speaker
 from .stt import Transcriber
 from .tts import Speaker
-from .xtts import XttsSpeaker
+from .xtts import XttsDaemonSpeaker, XttsSpeaker
 
 __all__ = [
     "Speaker",
     "Transcriber",
     "VoiceSpeaker",
+    "XttsDaemonSpeaker",
     "XttsSpeaker",
     "build_speaker",
     "play",
