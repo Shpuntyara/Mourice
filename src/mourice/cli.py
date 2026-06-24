@@ -6,6 +6,7 @@ Commands:
 - ``mourice chat``   — interactive terminal chat with Mourice.
 - ``mourice eval``   — run retrieval evals (search relevance hit-rate).
 - ``mourice voice``  — talk to Mourice by voice (push-to-talk).
+- ``mourice telegram`` — run the Telegram bot (long-polling).
 """
 
 from __future__ import annotations
@@ -67,6 +68,7 @@ def main() -> None:
     sub.add_parser("chat", help="Interactive terminal chat with Mourice")
     sub.add_parser("eval", help="Run retrieval evals (search relevance)")
     sub.add_parser("voice", help="Talk to Mourice by voice (push-to-talk)")
+    sub.add_parser("telegram", help="Run the Telegram bot (long-polling)")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -85,6 +87,13 @@ def main() -> None:
         from mourice.interfaces import run_voice
 
         run_voice(settings)
+    elif args.command == "telegram":
+        from mourice.interfaces import run_telegram
+
+        try:
+            run_telegram(settings)
+        except ValueError as exc:
+            console.print(f"[red]{exc}[/]")
     else:
         _banner(settings)
 

@@ -32,6 +32,9 @@ voice = [
     "faster-whisper>=1.1",
     "piper-tts>=1.4",
 ]
+telegram = [
+    "aiogram>=3.0",
+]
 
 [project.scripts]
 mourice = "mourice.cli:main"
@@ -57,7 +60,7 @@ strict = true
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["chromadb.*", "sounddevice.*", "faster_whisper.*", "piper.*"]
+module = ["chromadb.*", "sounddevice.*", "faster_whisper.*", "piper.*", "aiogram.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
