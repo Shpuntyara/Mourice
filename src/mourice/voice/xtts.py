@@ -45,8 +45,9 @@ class XttsSpeaker:
         temperature: float = 0.75,
         speed: float = 0.9,
         repetition_penalty: float = 5.0,
-        top_k: int = 50,
-        top_p: float = 0.85,
+        top_k: int = 25,
+        top_p: float = 0.78,
+        pitch: float = 1.0,
         runner: Runner | None = None,
     ) -> None:
         self._python = str(python_exe)
@@ -59,6 +60,7 @@ class XttsSpeaker:
         self._repetition_penalty = repetition_penalty
         self._top_k = top_k
         self._top_p = top_p
+        self._pitch = pitch
         self._run: Runner = runner or _default_runner
 
     def save(self, text: str, path: str | Path) -> None:
@@ -76,6 +78,7 @@ class XttsSpeaker:
             "--repetition-penalty", str(self._repetition_penalty),
             "--top-k", str(self._top_k),
             "--top-p", str(self._top_p),
+            "--pitch", str(self._pitch),
         ]
         logger.bind(device=self._device).debug("XTTS synth")
         self._run(cmd)

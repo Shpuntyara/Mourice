@@ -46,6 +46,7 @@ def build_speaker(settings: Settings) -> VoiceSpeaker:
             repetition_penalty=settings.xtts_repetition_penalty,
             top_k=settings.xtts_top_k,
             top_p=settings.xtts_top_p,
+            pitch=settings.xtts_pitch,
         )
 
     if not settings.piper_voice:
