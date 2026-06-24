@@ -81,5 +81,6 @@ def build_orchestrator(
         ToolRegistry(tools),
         context,
         router=router,
+        max_iterations=10,
         history_path=settings.history_file or None,
     )
