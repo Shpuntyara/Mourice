@@ -68,8 +68,12 @@ def run_telegram(
     from aiogram.types import FSInputFile, Message
 
     from mourice.app import build_orchestrator
+    from mourice.modules import deny_all
 
-    agent = orchestrator or build_orchestrator(settings)
+    # Owner is the only user, so optionally approve dangerous ops without a prompt.
+    confirmer = (lambda _p: True) if settings.telegram_allow_commands else deny_all
+
+    agent = orchestrator or build_orchestrator(settings, confirmer=confirmer)
     owner_id = settings.telegram_owner_id
 
     # Voice deps are built lazily on first voice message to keep startup light.
@@ -138,7 +142,7 @@ def run_telegram(
             await message.answer("Использование: /lang ru|pl|en")
             return
         nonlocal agent
-        agent = build_orchestrator(settings, language=lang)
+        agent = build_orchestrator(settings, language=lang, confirmer=confirmer)
         await message.answer(f"Язык: {lang} (история сброшена).")
 
     async def on_text(message: Message) -> None:

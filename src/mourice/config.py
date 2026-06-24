@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     telegram_token: str = ""  # BotFather token; empty disables the bot
     telegram_owner_id: int = 0  # only this Telegram user may talk to the bot (0 = nobody)
     telegram_voice_reply: bool = False  # also reply with synthesized audio (needs voice extra)
+    telegram_allow_commands: bool = False  # allow dangerous ops (delete/shell) from Telegram
 
     # System access (Phase 3.5): file + shell tools (dangerous ops need confirmation)
     system_tools: bool = True
