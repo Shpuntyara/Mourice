@@ -78,6 +78,16 @@ def test_max_iterations_guard() -> None:
     assert len(backend.calls) == 3
 
 
+def test_history_persists_across_instances(tmp_path: Any) -> None:
+    path = tmp_path / "conv.json"
+    b1 = _FakeBackend([{"content": "ответ"}])
+    Orchestrator(b1, ToolRegistry(), history_path=path).run("привет")
+
+    b2 = _FakeBackend([{"content": "снова"}])
+    orch2 = Orchestrator(b2, ToolRegistry(), history_path=path)
+    assert any(m.content == "привет" for m in orch2.history)
+
+
 def test_reset_clears_history() -> None:
     backend = _FakeBackend([{"content": "a"}, {"content": "b"}])
     orch = Orchestrator(backend, ToolRegistry())

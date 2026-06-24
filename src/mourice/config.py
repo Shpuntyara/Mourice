@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # System access (Phase 3.5): file + shell tools (dangerous ops need confirmation)
     system_tools: bool = True
 
+    # Conversation memory persisted across restarts ("" disables)
+    history_file: str = "data/conversation.json"
+
     # Runtime
     log_level: str = Field(default="INFO")
 
