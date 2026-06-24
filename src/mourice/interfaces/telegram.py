@@ -13,6 +13,7 @@ pure helpers below stay import-light for tests.
 
 from __future__ import annotations
 
+import re
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -24,7 +25,28 @@ if TYPE_CHECKING:
     from mourice.core import Orchestrator
     from mourice.voice import Transcriber, VoiceSpeaker
 
-__all__ = ["authorize", "parse_lang", "run_telegram"]
+__all__ = ["authorize", "parse_lang", "run_telegram", "split_sentences"]
+
+_SENTENCE_RE = re.compile(r'(?<=[.!?…])\s+(?=[^\s])')
+_MIN_SENTENCE_LEN = 4
+
+
+def split_sentences(text: str) -> list[str]:
+    """Split text into sentences for streaming TTS delivery."""
+    parts = _SENTENCE_RE.split(text.strip())
+    result: list[str] = []
+    buf = ""
+    for part in parts:
+        buf = (buf + " " + part).strip() if buf else part
+        if len(buf) >= _MIN_SENTENCE_LEN:
+            result.append(buf)
+            buf = ""
+    if buf:
+        if result:
+            result[-1] += " " + buf  # merge tiny tail into previous
+        else:
+            result.append(buf)
+    return result or [text]
 
 _LANGUAGES = {"ru", "pl", "en"}
 
@@ -137,14 +159,21 @@ def run_telegram(
     async def _reply(message: Message, text: str) -> None:
         speaker_ = _get_speaker()
         if speaker_ is not None and text.strip():
-            try:
-                with tempfile.TemporaryDirectory() as tmp:
-                    wav = Path(tmp) / "reply.wav"
-                    await asyncio.to_thread(speaker_.save, text, wav)  # type: ignore[attr-defined]
-                    await message.answer_audio(FSInputFile(wav))
-                return  # voice sent — skip text to avoid contradiction
-            except Exception:  # noqa: BLE001 — voice reply is best-effort
-                logger.exception("Telegram voice reply failed")
+            sentences = split_sentences(text)
+            sent_any = False
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+                try:
+                    with tempfile.TemporaryDirectory() as tmp:
+                        wav = Path(tmp) / "reply.wav"
+                        await asyncio.to_thread(speaker_.save, sentence, wav)  # type: ignore[attr-defined]
+                        await message.answer_audio(FSInputFile(wav))
+                        sent_any = True
+                except Exception:  # noqa: BLE001 — voice reply is best-effort
+                    logger.exception("Telegram voice reply failed for sentence")
+            if sent_any:
+                return
         await message.answer(text)
 
     async def on_start(message: Message) -> None:

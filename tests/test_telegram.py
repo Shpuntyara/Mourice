@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from mourice.config import Settings
-from mourice.interfaces.telegram import authorize, parse_lang, run_telegram
+from mourice.interfaces.telegram import authorize, parse_lang, run_telegram, split_sentences
 
 
 def test_authorize_accepts_owner() -> None:
@@ -39,6 +39,22 @@ def test_run_telegram_without_token_raises() -> None:
     settings = Settings(telegram_token="", telegram_owner_id=42)
     with pytest.raises(ValueError, match="MOURICE_TELEGRAM_TOKEN"):
         run_telegram(settings)
+
+
+def test_split_sentences_basic() -> None:
+    parts = split_sentences("Привет. Как дела? Всё отлично!")
+    assert len(parts) == 3
+    assert parts[0] == "Привет."
+
+
+def test_split_sentences_single() -> None:
+    assert split_sentences("Привет") == ["Привет"]
+
+
+def test_split_sentences_merges_tiny_tail() -> None:
+    # very short tail should be merged into last sentence
+    parts = split_sentences("Нормально всё. Ок.")
+    assert len(parts) == 1
 
 
 def test_run_telegram_without_owner_raises() -> None:
