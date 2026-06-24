@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # LLM (Ollama)
     ollama_host: str = "http://localhost:11434"
     default_model: str = "qwen2.5:14b"
+    # Model used for tool-calling tasks (file/shell ops). Empty = same as default_model.
+    tool_model: str = ""
     # Multilingual embedding model served by Ollama (strong on RU/PL).
     embedding_model: str = "bge-m3"
 
@@ -41,6 +43,11 @@ class Settings(BaseSettings):
     xtts_script: str = "scripts/xtts_speak.py"
     speaker_reference: str = ""  # reference voice .wav to clone
     xtts_device: str = "cpu"  # "cpu" | "cuda"
+    xtts_temperature: float = 0.75   # lower = more stable, higher = more expressive
+    xtts_speed: float = 0.9          # <1.0 = slower/lazier, >1.0 = faster
+    xtts_repetition_penalty: float = 5.0
+    xtts_top_k: int = 50
+    xtts_top_p: float = 0.85
 
     # Telegram (Phase 3)
     telegram_token: str = ""  # BotFather token; empty disables the bot

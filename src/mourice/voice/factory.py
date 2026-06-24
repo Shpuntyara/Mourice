@@ -41,6 +41,11 @@ def build_speaker(settings: Settings) -> VoiceSpeaker:
             settings.speaker_reference,
             language=settings.voice_language,
             device=settings.xtts_device,
+            temperature=settings.xtts_temperature,
+            speed=settings.xtts_speed,
+            repetition_penalty=settings.xtts_repetition_penalty,
+            top_k=settings.xtts_top_k,
+            top_p=settings.xtts_top_p,
         )
 
     if not settings.piper_voice:
