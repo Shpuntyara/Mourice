@@ -70,7 +70,7 @@ STT (faster-whisper) runs on CPU by default; the Whisper model downloads on firs
 Talk to Mourice from your phone. The bot is **single-owner** — only your Telegram
 account may use it, since Mourice can write to your vault.
 ```bash
-uv sync --extra telegram                     # python-telegram-bot
+uv sync --extra telegram                     # aiogram
 # Get a token from @BotFather and your numeric id from @userinfobot, then set:
 # MOURICE_TELEGRAM_TOKEN=123456:ABC...
 # MOURICE_TELEGRAM_OWNER_ID=123456789

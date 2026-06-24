@@ -33,7 +33,7 @@ voice = [
     "piper-tts>=1.4",
 ]
 telegram = [
-    "python-telegram-bot>=21.0",
+    "aiogram>=3.0",
 ]
 
 [project.scripts]
@@ -60,7 +60,7 @@ strict = true
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["chromadb.*", "sounddevice.*", "faster_whisper.*", "piper.*", "telegram.*"]
+module = ["chromadb.*", "sounddevice.*", "faster_whisper.*", "piper.*", "aiogram.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

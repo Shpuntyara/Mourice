@@ -5,9 +5,10 @@ Single-owner: only ``telegram_owner_id`` may use the bot, since the orchestrator
 can write to the vault. Text and voice messages are supported; voice notes are
 transcribed with the same faster-whisper STT used by the voice loop.
 
-Heavy/optional deps (python-telegram-bot, faster-whisper, piper) are imported
-lazily inside ``run_telegram`` so the package imports without the ``telegram`` /
-``voice`` extras installed. The pure helpers below stay import-light for tests.
+Built on aiogram (per the "Фаза 3 — Telegram" design note). Heavy/optional deps
+(aiogram, faster-whisper, piper) are imported lazily inside ``run_telegram`` so
+the package imports without the ``telegram`` / ``voice`` extras installed. The
+pure helpers below stay import-light for tests.
 """
 
 from __future__ import annotations
@@ -41,9 +42,9 @@ def authorize(user_id: int | None, owner_id: int) -> bool:
     return owner_id != 0 and user_id == owner_id
 
 
-def parse_lang(arg: str) -> str | None:
+def parse_lang(arg: str | None) -> str | None:
     """Parse a ``/lang`` argument into a supported language code, or None."""
-    code = arg.strip().lower()
+    code = (arg or "").strip().lower()
     return code if code in _LANGUAGES else None
 
 
@@ -62,14 +63,9 @@ def run_telegram(
 
     import asyncio
 
-    from telegram import Update
-    from telegram.ext import (
-        Application,
-        CommandHandler,
-        ContextTypes,
-        MessageHandler,
-        filters,
-    )
+    from aiogram import Bot, Dispatcher, F
+    from aiogram.filters import Command, CommandObject
+    from aiogram.types import FSInputFile, Message
 
     from mourice.app import build_orchestrator
 
@@ -97,88 +93,88 @@ def run_telegram(
             state["speaker"] = build_speaker(settings)
         return state["speaker"]  # type: ignore[no-any-return]
 
-    async def _guard(update: Update) -> bool:
-        user = update.effective_user
-        if authorize(user.id if user else None, owner_id):
-            return True
-        logger.bind(user_id=user.id if user else None).warning("Telegram access denied")
-        if update.message:
-            await update.message.reply_text(_DENIED)
-        return False
+    def _authorized(message: Message) -> bool:
+        return authorize(message.from_user.id if message.from_user else None, owner_id)
 
-    async def _reply(update: Update, text: str) -> None:
-        if not update.message:
-            return
-        await update.message.reply_text(text)
+    async def _deny(message: Message) -> None:
+        logger.bind(user_id=message.from_user.id if message.from_user else None).warning(
+            "Telegram access denied"
+        )
+        await message.answer(_DENIED)
+
+    async def _reply(message: Message, text: str) -> None:
+        await message.answer(text)
         speaker_ = _get_speaker()
         if speaker_ is not None and text.strip():
             try:
                 with tempfile.TemporaryDirectory() as tmp:
                     wav = Path(tmp) / "reply.wav"
                     await asyncio.to_thread(speaker_.save, text, wav)  # type: ignore[attr-defined]
-                    with wav.open("rb") as fh:
-                        await update.message.reply_audio(fh)
+                    await message.answer_audio(FSInputFile(wav))
             except Exception:  # noqa: BLE001 — voice reply is best-effort
                 logger.exception("Telegram voice reply failed")
 
-    async def on_start(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-        if not await _guard(update) or not update.message:
-            return
-        await update.message.reply_text(_WELCOME)
+    async def on_start(message: Message) -> None:
+        if not _authorized(message):
+            return await _deny(message)
+        await message.answer(_WELCOME)
 
-    async def on_help(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-        if not await _guard(update) or not update.message:
-            return
-        await update.message.reply_text(_HELP)
+    async def on_help(message: Message) -> None:
+        if not _authorized(message):
+            return await _deny(message)
+        await message.answer(_HELP)
 
-    async def on_reset(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-        if not await _guard(update) or not update.message:
-            return
+    async def on_reset(message: Message) -> None:
+        if not _authorized(message):
+            return await _deny(message)
         agent.reset()
-        await update.message.reply_text("История очищена.")
+        await message.answer("История очищена.")
 
-    async def on_lang(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-        if not await _guard(update) or not update.message:
-            return
-        lang = parse_lang(ctx.args[0]) if ctx.args else None
+    async def on_lang(message: Message, command: CommandObject) -> None:
+        if not _authorized(message):
+            return await _deny(message)
+        lang = parse_lang(command.args)
         if lang is None:
-            await update.message.reply_text("Использование: /lang ru|pl|en")
+            await message.answer("Использование: /lang ru|pl|en")
             return
-        # Rebuild on the configured agent only when we own it (default wiring).
         nonlocal agent
         agent = build_orchestrator(settings, language=lang)
-        await update.message.reply_text(f"Язык: {lang} (история сброшена).")
+        await message.answer(f"Язык: {lang} (история сброшена).")
 
-    async def on_text(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-        if not await _guard(update) or not update.message or not update.message.text:
+    async def on_text(message: Message) -> None:
+        if not _authorized(message):
+            return await _deny(message)
+        if not message.text:
             return
-        await update.message.chat.send_action("typing")
-        reply = await asyncio.to_thread(agent.run, update.message.text)
-        await _reply(update, reply)
+        await bot.send_chat_action(message.chat.id, "typing")
+        reply = await asyncio.to_thread(agent.run, message.text)
+        await _reply(message, reply)
 
-    async def on_voice(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-        if not await _guard(update) or not update.message or not update.message.voice:
+    async def on_voice(message: Message) -> None:
+        if not _authorized(message):
+            return await _deny(message)
+        if not message.voice:
             return
-        await update.message.chat.send_action("typing")
-        tg_file = await update.message.voice.get_file()
+        await bot.send_chat_action(message.chat.id, "typing")
         with tempfile.TemporaryDirectory() as tmp:
             ogg = Path(tmp) / "voice.ogg"
-            await tg_file.download_to_drive(ogg)
+            await bot.download(message.voice, destination=ogg)
             text = await asyncio.to_thread(_get_transcriber().transcribe_file, ogg)
         if not text:
-            await update.message.reply_text(_NO_SPEECH)
+            await message.answer(_NO_SPEECH)
             return
-        await update.message.reply_text(f"🗣 {text}")
+        await message.answer(f"🗣 {text}")
         reply = await asyncio.to_thread(agent.run, text)
-        await _reply(update, reply)
+        await _reply(message, reply)
 
-    app = Application.builder().token(settings.telegram_token).build()
-    app.add_handler(CommandHandler("start", on_start))
-    app.add_handler(CommandHandler("help", on_help))
-    app.add_handler(CommandHandler("reset", on_reset))
-    app.add_handler(CommandHandler("lang", on_lang))
-    app.add_handler(MessageHandler(filters.VOICE, on_voice))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
+    dp = Dispatcher()
+    dp.message.register(on_start, Command("start"))
+    dp.message.register(on_help, Command("help"))
+    dp.message.register(on_reset, Command("reset"))
+    dp.message.register(on_lang, Command("lang"))
+    dp.message.register(on_voice, F.voice)
+    dp.message.register(on_text, F.text & ~F.text.startswith("/"))
 
+    bot = Bot(settings.telegram_token)
     logger.bind(owner_id=owner_id).info("Telegram bot starting (long-polling)")
-    app.run_polling()
+    asyncio.run(dp.start_polling(bot))
