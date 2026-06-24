@@ -32,6 +32,7 @@ voices/
 
 # Data (local knowledge stores — never commit personal data)
 data/
+!data/paths.json
 *.sqlite3
 chroma/
 ChromaDB/
