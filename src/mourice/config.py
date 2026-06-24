@@ -34,7 +34,13 @@ class Settings(BaseSettings):
     # Voice (Phase 2)
     whisper_model: str = "small"  # faster-whisper model size
     voice_language: str = "ru"
+    tts_engine: str = "piper"  # "piper" | "xtts"
     piper_voice: str = ""  # path to a Piper .onnx voice model
+    # XTTS voice-clone (isolated env, called as a subprocess)
+    xtts_python: str = ""  # path to .venv-xtts python
+    xtts_script: str = "scripts/xtts_speak.py"
+    speaker_reference: str = ""  # reference voice .wav to clone
+    xtts_device: str = "cpu"  # "cpu" | "cuda"
 
     # Runtime
     log_level: str = Field(default="INFO")

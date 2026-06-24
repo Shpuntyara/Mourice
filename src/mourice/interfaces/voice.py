@@ -14,7 +14,7 @@ from rich.console import Console
 
 from mourice.app import build_orchestrator
 from mourice.config import Settings
-from mourice.voice import Speaker, Transcriber, record_until_enter
+from mourice.voice import Transcriber, VoiceSpeaker, build_speaker, record_until_enter
 
 if TYPE_CHECKING:
     from mourice.core import Orchestrator
@@ -30,20 +30,23 @@ def run_voice(
     console: Console | None = None,
     orchestrator: Orchestrator | None = None,
     transcriber: Transcriber | None = None,
-    speaker: Speaker | None = None,
+    speaker: VoiceSpeaker | None = None,
     recorder: Callable[[], Any] | None = None,
 ) -> None:
     """Run the push-to-talk voice loop."""
     console = console or Console()
-    if not settings.piper_voice and speaker is None:
-        console.print("[red]Set MOURICE_PIPER_VOICE to a Piper .onnx voice file.[/]")
-        return
+
+    if speaker is None:
+        try:
+            speaker = build_speaker(settings)
+        except ValueError as exc:
+            console.print(f"[red]{exc}[/]")
+            return
 
     orchestrator = orchestrator or build_orchestrator(settings)
     transcriber = transcriber or Transcriber(
         settings.whisper_model, language=settings.voice_language
     )
-    speaker = speaker or Speaker(settings.piper_voice)
     record = recorder or record_until_enter
 
     console.print(
