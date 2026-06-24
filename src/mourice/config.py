@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     telegram_owner_id: int = 0  # only this Telegram user may talk to the bot (0 = nobody)
     telegram_voice_reply: bool = False  # also reply with synthesized audio (needs voice extra)
 
+    # System access (Phase 3.5): file + shell tools (dangerous ops need confirmation)
+    system_tools: bool = True
+
     # Runtime
     log_level: str = Field(default="INFO")
 

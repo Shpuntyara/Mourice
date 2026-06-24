@@ -9,13 +9,21 @@ call one, the registry executes it. The core never hard-codes tool logic
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any
 
 from mourice.log import logger
 
-__all__ = ["Tool", "ToolParameter", "ToolRegistry"]
+__all__ = ["Confirmer", "Tool", "ToolParameter", "ToolRegistry", "deny_all"]
+
+# Asks the user to approve a dangerous action; returns True to proceed.
+Confirmer = Callable[[str], bool]
+
+
+def deny_all(_prompt: str) -> bool:
+    """Default confirmer: refuse every dangerous action (safe default)."""
+    return False
 
 
 @dataclass(frozen=True)

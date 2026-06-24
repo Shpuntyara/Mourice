@@ -41,7 +41,12 @@ def run_chat(settings: Settings, *, console: Console | None = None) -> None:
     """Run the interactive chat loop."""
     console = console or Console()
     language = DEFAULT_LANGUAGE
-    orchestrator = build_orchestrator(settings, language=language)
+
+    def confirm(prompt: str) -> bool:
+        answer = console.input(f"[yellow]⚠ {prompt}[/] [bold]\\[y/N][/] ").strip().lower()
+        return answer in {"y", "yes", "д", "да"}
+
+    orchestrator = build_orchestrator(settings, language=language, confirmer=confirm)
 
     console.print(
         f"[bold cyan]Морис[/] на [green]{settings.default_model}[/]. "
@@ -69,7 +74,9 @@ def run_chat(settings: Settings, *, console: Console | None = None) -> None:
             if command.name == "lang":
                 if command.arg in _LANGUAGES:
                     language = command.arg
-                    orchestrator = build_orchestrator(settings, language=language)
+                    orchestrator = build_orchestrator(
+                        settings, language=language, confirmer=confirm
+                    )
                     console.print(f"[dim]Язык: {language} (история сброшена).[/]")
                 else:
                     console.print("[red]Использование: /lang ru|pl|en[/]")

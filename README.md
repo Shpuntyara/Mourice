@@ -15,7 +15,8 @@ Inspired by J.A.R.V.I.S. — a long-term project that also serves as a learning 
 - 🧠 **Orchestrator core** — a custom agent loop with function-calling tools.
 - 📚 **Knowledge-grounded (RAG)** — semantic search over an Obsidian vault via ChromaDB.
 - 🌍 **Multilingual** — local `bge-m3` embeddings; strong on Russian, Polish, English.
-- 🔌 **Tools** — `search_memory`, `read_note`, `write_note` (with action-safety).
+- 🔌 **Tools** — `search_memory`, `read_note`, `write_note`, plus full-PC system tools (`list_dir`, `read_file`, `write_file`, `delete_path`, `run_command`).
+- 🛡️ **Action safety** — reading/creating is free; delete/overwrite/shell ask for confirmation (in the terminal).
 - 🗣️ **Personality** — friendly companion, honest ("I don't know" + reason), language-switchable.
 - 🎙️ **Voice (Phase 2)** — talk to Mourice: local STT (faster-whisper) + TTS (Piper).
 - 💬 **Telegram (Phase 3)** — single-owner bot: chat by text or voice message from your phone.
