@@ -18,6 +18,7 @@ Inspired by J.A.R.V.I.S. — a long-term project that also serves as a learning 
 - 🔌 **Tools** — `search_memory`, `read_note`, `write_note` (with action-safety).
 - 🗣️ **Personality** — friendly companion, honest ("I don't know" + reason), language-switchable.
 - 🎙️ **Voice (Phase 2)** — talk to Mourice: local STT (faster-whisper) + TTS (Piper).
+- 💬 **Telegram (Phase 3)** — single-owner bot: chat by text or voice message from your phone.
 - 🏠 **Local-first & private** — runs entirely on local hardware via Ollama; no cloud.
 
 ## 🚀 Getting started
@@ -65,6 +66,21 @@ uv run mourice voice                         # push-to-talk: Enter to talk, q to
 ```
 STT (faster-whisper) runs on CPU by default; the Whisper model downloads on first use.
 
+### Telegram (optional)
+Talk to Mourice from your phone. The bot is **single-owner** — only your Telegram
+account may use it, since Mourice can write to your vault.
+```bash
+uv sync --extra telegram                     # python-telegram-bot
+# Get a token from @BotFather and your numeric id from @userinfobot, then set:
+# MOURICE_TELEGRAM_TOKEN=123456:ABC...
+# MOURICE_TELEGRAM_OWNER_ID=123456789
+uv run mourice telegram                       # long-polling; Ctrl-C to stop
+```
+Send text or a voice message (voice notes are transcribed with the same
+faster-whisper STT — needs the `voice` extra too). Commands: `/reset`, `/lang ru|pl|en`,
+`/help`. Set `MOURICE_TELEGRAM_VOICE_REPLY=true` to also get spoken replies (needs the
+`voice` extra and a configured TTS engine).
+
 ## 🗺️ Roadmap
 
 | Phase | Goal | Status |
@@ -72,7 +88,7 @@ STT (faster-whisper) runs on CPU by default; the Whisper model downloads on firs
 | 0 | Foundation: repo, Docker, CI | ✅ done |
 | 1 | Terminal MVP — chat grounded in the knowledge base (RAG) | ✅ done |
 | 2 | Voice (STT + TTS) | ✅ done |
-| 3 | Telegram bot | ⬜ |
+| 3 | Telegram bot | ✅ done |
 | 4 | Desktop UI with settings | ⬜ |
 | 5 | Skills: reminders, calendar, smart home, job search | ⬜ |
 | 6 | Physical body (robot) | ⬜ (long-term) |

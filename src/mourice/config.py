@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     speaker_reference: str = ""  # reference voice .wav to clone
     xtts_device: str = "cpu"  # "cpu" | "cuda"
 
+    # Telegram (Phase 3)
+    telegram_token: str = ""  # BotFather token; empty disables the bot
+    telegram_owner_id: int = 0  # only this Telegram user may talk to the bot (0 = nobody)
+    telegram_voice_reply: bool = False  # also reply with synthesized audio (needs voice extra)
+
     # Runtime
     log_level: str = Field(default="INFO")
 

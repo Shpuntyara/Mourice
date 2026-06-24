@@ -6,6 +6,7 @@ tests. The model is loaded lazily on first use (downloads once).
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from mourice.log import logger
@@ -51,6 +52,13 @@ class Transcriber:
         if samples.size == 0:
             return ""
         audio = samples.astype(np.float32) / 32768.0
+        return self._run(audio)
+
+    def transcribe_file(self, path: str | Path) -> str:
+        """Transcribe an audio file (any format faster-whisper can decode, e.g. OGG/Opus)."""
+        return self._run(str(path))
+
+    def _run(self, audio: Any) -> str:
         segments, _info = self._get_model().transcribe(audio, language=self._language)
         text = " ".join(segment.text.strip() for segment in segments).strip()
         logger.bind(chars=len(text)).debug("Transcribed audio")
