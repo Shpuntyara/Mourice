@@ -22,7 +22,13 @@ Runner = Callable[[Sequence[str]], None]
 
 
 def _default_runner(cmd: Sequence[str]) -> None:
-    subprocess.run(list(cmd), check=True, capture_output=True)
+    result = subprocess.run(list(cmd), capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"XTTS script exited {result.returncode}.\n"
+            f"stderr: {result.stderr.strip()}\n"
+            f"stdout: {result.stdout.strip()}"
+        )
 
 
 class XttsSpeaker:
