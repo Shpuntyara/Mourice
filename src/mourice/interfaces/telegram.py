@@ -73,7 +73,11 @@ def run_telegram(
     # Owner is the only user, so optionally approve dangerous ops without a prompt.
     confirmer = (lambda _p: True) if settings.telegram_allow_commands else deny_all
 
-    agent = orchestrator or build_orchestrator(settings, confirmer=confirmer)
+    agent = orchestrator or build_orchestrator(
+        settings,
+        confirmer=confirmer,
+        voice_enabled=settings.telegram_voice_reply,
+    )
     owner_id = settings.telegram_owner_id
 
     # Voice deps are built lazily on first voice message to keep startup light.

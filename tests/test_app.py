@@ -14,6 +14,7 @@ def test_build_orchestrator(tmp_path: Path) -> None:
         _env_file=None,
         obsidian_vault=str(tmp_path / "vault"),
         chroma_dir=str(tmp_path / "chroma"),
+        history_file="",
     )
     orchestrator = build_orchestrator(settings)
     assert isinstance(orchestrator, Orchestrator)

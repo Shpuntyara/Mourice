@@ -26,9 +26,11 @@ class ContextBuilder:
         *,
         language: str = DEFAULT_LANGUAGE,
         max_history_messages: int = _DEFAULT_MAX_HISTORY,
+        voice_enabled: bool = False,
     ) -> None:
         self._language = language
         self._max_history = max_history_messages
+        self._voice_enabled = voice_enabled
 
     def build(
         self,
@@ -38,7 +40,9 @@ class ContextBuilder:
         retrieved: Sequence[str] | None = None,
     ) -> list[Message]:
         """Assemble messages: system → [memory] → recent history → user input."""
-        messages: list[Message] = [Message("system", build_system_prompt(self._language))]
+        messages: list[Message] = [
+            Message("system", build_system_prompt(self._language, voice_enabled=self._voice_enabled))
+        ]
 
         if retrieved:
             joined = "\n\n---\n\n".join(retrieved)
