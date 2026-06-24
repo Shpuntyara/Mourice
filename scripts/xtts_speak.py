@@ -26,6 +26,11 @@ def main() -> None:
     parser.add_argument("--out", required=True, help="output .wav path")
     parser.add_argument("--language", default="ru")
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
+    parser.add_argument("--temperature", type=float, default=0.75)
+    parser.add_argument("--speed", type=float, default=0.9)
+    parser.add_argument("--repetition-penalty", type=float, default=5.0)
+    parser.add_argument("--top-k", type=int, default=50)
+    parser.add_argument("--top-p", type=float, default=0.85)
     args = parser.parse_args()
 
     from TTS.api import TTS
@@ -37,6 +42,11 @@ def main() -> None:
         speaker_wav=args.speaker,
         language=args.language,
         file_path=args.out,
+        temperature=args.temperature,
+        speed=args.speed,
+        repetition_penalty=args.repetition_penalty,
+        top_k=args.top_k,
+        top_p=args.top_p,
     )
 
 
