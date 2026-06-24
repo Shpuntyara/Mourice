@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Protocol
 
 from mourice.config import Settings
+
+# Repo root (two levels above this file: src/mourice/voice/factory.py → repo root)
+_REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
 from .tts import Speaker
 from .xtts import XttsSpeaker
@@ -28,9 +32,12 @@ def build_speaker(settings: Settings) -> VoiceSpeaker:
             raise ValueError(
                 "Set MOURICE_XTTS_PYTHON and MOURICE_SPEAKER_REFERENCE for the xtts engine."
             )
+        script = Path(settings.xtts_script)
+        if not script.is_absolute():
+            script = _REPO_ROOT / script
         return XttsSpeaker(
             settings.xtts_python,
-            settings.xtts_script,
+            script,
             settings.speaker_reference,
             language=settings.voice_language,
             device=settings.xtts_device,
