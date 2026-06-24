@@ -19,10 +19,46 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import numpy as np
+import noisereduce as nr
+import soundfile as sf
+from scipy.signal import butter, sosfilt
+
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
 
 _MODEL = "tts_models/multilingual/multi-dataset/xtts_v2"
 _DEFAULT_PORT = 5199
+
+
+def _postprocess(raw: Path, out: str, pitch: float) -> None:
+    """Denoise + normalize synthesized audio in Python (scipy + noisereduce)."""
+    audio, sr = sf.read(str(raw), always_2d=False)
+    audio = audio.astype(np.float32)
+
+    # Highpass at 80 Hz — remove low-frequency rumble
+    sos = butter(4, 80, btype="highpass", fs=sr, output="sos")
+    audio = sosfilt(sos, audio).astype(np.float32)
+
+    # Spectral noise reduction — use tail silence as noise profile
+    noise_sample = audio[-int(sr * 0.3):] if len(audio) > sr * 0.3 else audio[:int(sr * 0.2)]
+    audio = nr.reduce_noise(y=audio, sr=sr, y_noise=noise_sample, prop_decrease=0.75).astype(np.float32)
+
+    # Peak normalize to -1 dBFS
+    peak = np.max(np.abs(audio))
+    if peak > 0:
+        audio = audio / peak * 0.891
+
+    if pitch != 1.0:
+        # Pitch shift via ffmpeg (rate trick) — only when actually needed
+        sf.write(out + ".tmp.wav", audio, sr, subtype="PCM_16")
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", out + ".tmp.wav",
+             "-af", f"asetrate={sr}*{pitch},atempo=1/{pitch}", out],
+            check=True, capture_output=True,
+        )
+        Path(out + ".tmp.wav").unlink(missing_ok=True)
+    else:
+        sf.write(out, audio, sr, subtype="PCM_16")
 
 
 def _handle(conn: socket.socket, tts: object, args: argparse.Namespace) -> None:
@@ -37,41 +73,20 @@ def _handle(conn: socket.socket, tts: object, args: argparse.Namespace) -> None:
     text: str = req["text"]
     out_path: str = req["out"]
 
-    if args.pitch != 1.0:
-        with tempfile.TemporaryDirectory() as tmp:
-            raw = Path(tmp) / "raw.wav"
-            tts.tts_to_file(  # type: ignore[attr-defined]
-                text=text,
-                speaker_wav=args.speaker,
-                language=args.language,
-                file_path=str(raw),
-                temperature=args.temperature,
-                speed=args.speed,
-                repetition_penalty=args.repetition_penalty,
-                top_k=args.top_k,
-                top_p=args.top_p,
-            )
-            subprocess.run(
-                [
-                    "ffmpeg", "-y", "-i", str(raw),
-                    "-af", f"asetrate=22050*{args.pitch},atempo=1/{args.pitch}",
-                    out_path,
-                ],
-                check=True,
-                capture_output=True,
-            )
-    else:
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = Path(tmp) / "raw.wav"
         tts.tts_to_file(  # type: ignore[attr-defined]
             text=text,
             speaker_wav=args.speaker,
             language=args.language,
-            file_path=out_path,
+            file_path=str(raw),
             temperature=args.temperature,
             speed=args.speed,
             repetition_penalty=args.repetition_penalty,
             top_k=args.top_k,
             top_p=args.top_p,
         )
+        _postprocess(raw, out_path, args.pitch)
 
     conn.send((json.dumps({"ok": True}) + "\n").encode())
 
