@@ -35,6 +35,7 @@ def build_orchestrator(
     *,
     language: str = DEFAULT_LANGUAGE,
     confirmer: Confirmer = deny_all,
+    voice_enabled: bool = False,
 ) -> Orchestrator:
     """Assemble the full Mourice orchestrator from settings.
 
@@ -58,7 +59,7 @@ def build_orchestrator(
             RunCommandTool(confirmer),
         ]
 
-    context = ContextBuilder(language=language)
+    context = ContextBuilder(language=language, voice_enabled=voice_enabled)
     router = ModelRouter(settings.default_model)
     return Orchestrator(
         provider,
