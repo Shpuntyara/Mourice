@@ -68,17 +68,41 @@ def run_telegram(
     from aiogram.types import FSInputFile, Message
 
     from mourice.app import build_orchestrator
-    from mourice.modules import deny_all
+    from mourice.modules import SendFileTool, deny_all
 
     # Owner is the only user, so optionally approve dangerous ops without a prompt.
     confirmer = (lambda _p: True) if settings.telegram_allow_commands else deny_all
 
-    agent = orchestrator or build_orchestrator(
-        settings,
-        confirmer=confirmer,
-        voice_enabled=settings.telegram_voice_reply,
-    )
+    send_file_tool: SendFileTool | None = None
+    if orchestrator is None:
+        send_file_tool = SendFileTool()
+        agent = build_orchestrator(
+            settings,
+            confirmer=confirmer,
+            voice_enabled=settings.telegram_voice_reply,
+            send_file_tool=send_file_tool,
+        )
+    else:
+        agent = orchestrator
     owner_id = settings.telegram_owner_id
+
+    def _arm_sender(message: Message) -> None:
+        """Point send_file_tool at the current message before agent.run()."""
+        if send_file_tool is None:
+            return
+        loop = asyncio.get_running_loop()
+
+        def _sync_send(path: Path) -> None:
+            fut = asyncio.run_coroutine_threadsafe(
+                message.answer_document(FSInputFile(str(path))), loop
+            )
+            fut.result(timeout=60)
+
+        send_file_tool.set_sender(_sync_send)
+
+    def _disarm_sender() -> None:
+        if send_file_tool is not None:
+            send_file_tool.set_sender(None)
 
     # Voice deps are built lazily on first voice message to keep startup light.
     state: dict[str, Any] = {"transcriber": transcriber, "speaker": speaker}
@@ -156,7 +180,11 @@ def run_telegram(
         if not message.text:
             return
         await bot.send_chat_action(message.chat.id, "typing")
-        reply = await asyncio.to_thread(agent.run, message.text)
+        _arm_sender(message)
+        try:
+            reply = await asyncio.to_thread(agent.run, message.text)
+        finally:
+            _disarm_sender()
         await _reply(message, reply)
 
     async def on_voice(message: Message) -> None:
@@ -173,7 +201,11 @@ def run_telegram(
             await message.answer(_NO_SPEECH)
             return
         await message.answer(f"🗣 {text}")
-        reply = await asyncio.to_thread(agent.run, text)
+        _arm_sender(message)
+        try:
+            reply = await asyncio.to_thread(agent.run, text)
+        finally:
+            _disarm_sender()
         await _reply(message, reply)
 
     dp = Dispatcher()
