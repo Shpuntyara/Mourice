@@ -135,6 +135,7 @@ class Orchestrator:
                 arguments = _parse_arguments(function.get("arguments"))
                 logger.bind(tool=name).info("Orchestrator calling tool")
                 result = self._registry.execute(name, arguments)
+                logger.bind(tool=name, result=result[:120]).debug("Tool result")
                 messages.append({"role": "tool", "content": result, "tool_name": name})
 
         logger.warning("Max iterations reached without a final answer")
