@@ -43,11 +43,12 @@ class Settings(BaseSettings):
     xtts_script: str = "scripts/xtts_speak.py"
     speaker_reference: str = ""  # reference voice .wav to clone
     xtts_device: str = "cpu"  # "cpu" | "cuda"
-    xtts_temperature: float = 0.75   # lower = more stable, higher = more expressive
-    xtts_speed: float = 0.9          # <1.0 = slower/lazier, >1.0 = faster
+    xtts_temperature: float = 0.55   # lower = more stable, higher = more expressive
+    xtts_speed: float = 0.88         # <1.0 = slower/lazier, >1.0 = faster
     xtts_repetition_penalty: float = 5.0
-    xtts_top_k: int = 50
-    xtts_top_p: float = 0.85
+    xtts_top_k: int = 25
+    xtts_top_p: float = 0.78
+    xtts_pitch: float = 0.86         # <1.0 = lower pitch, applied via ffmpeg post-process
 
     # Telegram (Phase 3)
     telegram_token: str = ""  # BotFather token; empty disables the bot
