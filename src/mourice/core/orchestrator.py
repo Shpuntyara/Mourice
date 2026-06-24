@@ -30,11 +30,29 @@ class ChatBackend(Protocol):
         *,
         tools: list[dict[str, Any]] | None = None,
         model: str | None = None,
+        tool_choice: str | None = None,
     ) -> dict[str, Any]: ...
 
 
 def _to_dict(message: Message) -> dict[str, Any]:
     return {"role": message.role, "content": message.content}
+
+
+_ACTION_WORDS = (
+    "создай", "создать", "напиши", "написать", "сделай", "сделать",
+    "удали", "удалить", "открой", "открыть", "запусти", "запустить",
+    "скопируй", "скопировать", "перемести", "переименуй", "измени",
+    "добавь", "добавить", "вставь", "вставить", "запиши", "записать",
+    "переместить", "скачай", "установи", "запусти", "выполни",
+    "create", "write", "make", "delete", "remove", "copy", "move",
+    "run", "execute", "open", "install", "download",
+)
+
+
+def _is_action_request(text: str) -> bool:
+    """Return True if the user message looks like an action (not just a question)."""
+    lower = text.lower()
+    return any(w in lower for w in _ACTION_WORDS)
 
 
 def _parse_arguments(raw: Any) -> dict[str, Any]:
@@ -97,8 +115,10 @@ class Orchestrator:
         tools = self._registry.schemas() or None
         model = self._router.select(user_input) if self._router else self._model
 
-        for _ in range(self._max_iterations):
-            reply = self._backend.chat_raw(messages, tools=tools, model=model)
+        force_tool = tools and _is_action_request(user_input)
+        for iteration in range(self._max_iterations):
+            tc = "required" if (iteration == 0 and force_tool) else None
+            reply = self._backend.chat_raw(messages, tools=tools, model=model, tool_choice=tc)
             tool_calls = reply.get("tool_calls")
 
             if not tool_calls:

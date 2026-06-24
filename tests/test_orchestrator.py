@@ -30,6 +30,7 @@ class _FakeBackend:
         *,
         tools: list[dict[str, Any]] | None = None,
         model: str | None = None,
+        tool_choice: str | None = None,
     ) -> dict[str, Any]:
         self.calls.append(messages)
         return self._replies.pop(0)

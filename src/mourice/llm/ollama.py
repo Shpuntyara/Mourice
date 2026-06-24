@@ -75,6 +75,7 @@ class OllamaProvider:
         *,
         tools: list[dict[str, Any]] | None = None,
         model: str | None = None,
+        tool_choice: str | None = None,
     ) -> dict[str, Any]:
         """Non-streaming chat that returns the raw assistant message.
 
@@ -88,6 +89,8 @@ class OllamaProvider:
         }
         if tools:
             payload["tools"] = tools
+            if tool_choice:
+                payload["tool_choice"] = tool_choice
         response = self._client.post("/api/chat", json=payload)
         response.raise_for_status()
         message = response.json().get("message", {})

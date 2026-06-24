@@ -18,7 +18,9 @@ from .prompt import DEFAULT_LANGUAGE, build_system_prompt
 __all__ = ["ContextBuilder"]
 
 _DEFAULT_MAX_HISTORY = 10
-_DEFAULT_PATHS_FILE = Path(__file__).parent.parent.parent.parent / "data" / "paths.json"
+_DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
+_DEFAULT_PATHS_FILE = _DATA_DIR / "paths.json"
+_DEFAULT_OPS_FILE = _DATA_DIR / "operations.md"
 
 
 def _load_paths(paths_file: Path) -> str | None:
@@ -47,11 +49,13 @@ class ContextBuilder:
         max_history_messages: int = _DEFAULT_MAX_HISTORY,
         voice_enabled: bool = False,
         paths_file: Path | None = None,
+        ops_file: Path | None = None,
     ) -> None:
         self._language = language
         self._max_history = max_history_messages
         self._voice_enabled = voice_enabled
         self._paths_file = paths_file if paths_file is not None else _DEFAULT_PATHS_FILE
+        self._ops_file = ops_file if ops_file is not None else _DEFAULT_OPS_FILE
 
     def build(
         self,
@@ -68,6 +72,12 @@ class ContextBuilder:
         paths_block = _load_paths(self._paths_file)
         if paths_block:
             messages.append(Message("system", paths_block))
+
+        try:
+            ops = self._ops_file.read_text(encoding="utf-8")
+            messages.append(Message("system", ops))
+        except OSError:
+            pass
 
         if retrieved:
             joined = "\n\n---\n\n".join(retrieved)
